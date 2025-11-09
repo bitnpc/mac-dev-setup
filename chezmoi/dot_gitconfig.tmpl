@@ -1,0 +1,12 @@
+[user]
+  name = {{ .git.name | default "Your Name" }}
+  email = {{ .git.email | default "your_email@example.com" }}
+[init]
+  defaultBranch = main
+[core]
+  autocrlf = input
+[pull]
+  rebase = false
+[credential]
+  helper = osxkeychain
+

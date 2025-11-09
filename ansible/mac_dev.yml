@@ -1,0 +1,55 @@
+- name: macOS 开发环境配置
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    brew_prefix: "{{ lookup('pipe', 'brew --prefix') | default('/opt/homebrew', true) }}"
+    python_version: "{{ lookup('env', 'PYTHON_VERSION') | default('3.11.6', true) }}"
+    ruby_version: "{{ lookup('env', 'RUBY_VERSION') | default('3.2.2', true) }}"
+    node_version: "{{ lookup('env', 'NODE_VERSION') | default('20', true) }}"
+    home: "{{ lookup('env', 'HOME') }}"
+  tasks:
+    - name: 更新 Homebrew
+      command: brew update
+
+    - name: 安装 Brewfile 依赖
+      command: brew bundle install --file={{ playbook_dir }}/../Brewfile
+
+    - name: 安装 pyenv 指定版本
+      command: pyenv install -s {{ python_version }}
+      environment:
+        PATH: "{{ brew_prefix }}/bin:{{ ansible_env.PATH }}"
+      when: "'pyenv' in lookup('pipe', 'command -v pyenv || true')"
+
+    - name: 设置全局 Python 版本
+      command: pyenv global {{ python_version }}
+      when: "'pyenv' in lookup('pipe', 'command -v pyenv || true')"
+
+    - name: 安装 rbenv 指定版本
+      command: rbenv install -s {{ ruby_version }}
+      environment:
+        PATH: "{{ brew_prefix }}/bin:{{ ansible_env.PATH }}"
+        RUBY_CONFIGURE_OPTS: "--with-openssl-dir={{ brew_prefix }}/opt/openssl@3"
+      when: "'rbenv' in lookup('pipe', 'command -v rbenv || true')"
+
+    - name: 设置全局 Ruby 版本
+      command: rbenv global {{ ruby_version }}
+      when: "'rbenv' in lookup('pipe', 'command -v rbenv || true')"
+
+    - name: 安装 Volta 指定 Node.js
+      command: volta install node@{{ node_version }}
+      environment:
+        VOLTA_HOME: "{{ home }}/.volta"
+        PATH: "{{ home }}/.volta/bin:{{ ansible_env.PATH }}"
+      when: "'volta' in lookup('pipe', 'command -v volta || true')"
+
+    - name: 安装 pnpm
+      command: volta install pnpm
+      environment:
+        VOLTA_HOME: "{{ home }}/.volta"
+        PATH: "{{ home }}/.volta/bin:{{ ansible_env.PATH }}"
+      when: "'volta' in lookup('pipe', 'command -v volta || true')"
+
+    - name: 生成 chezmoi dotfiles
+      command: chezmoi init --apply --source={{ playbook_dir }}/../chezmoi
+
