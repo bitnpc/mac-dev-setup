@@ -39,19 +39,12 @@ else
 fi
 
 echo "==> 配置 Node.js（Volta & nvm）"
-if ! command -v volta >/dev/null 2>&1; then
-  curl https://get.volta.sh | bash -s -- --skip-setup
-fi
 if command -v volta >/dev/null 2>&1; then
   export VOLTA_HOME="${HOME}/.volta"
   mkdir -p "${VOLTA_HOME}"
   export PATH="${VOLTA_HOME}/bin:${PATH}"
   volta install "node@${NODE_VERSION}"
   volta install pnpm
-fi
-if [ -d "${HOME}/.nvm" ] && command -v nvm >/dev/null 2>&1; then
-  nvm install "${NODE_VERSION}"
-  nvm alias default "${NODE_VERSION}"
 fi
 
 echo "==> 配置 Go / Rust / asdf"
@@ -68,11 +61,15 @@ else
   echo "未安装 Go，可通过 Brewfile 安装" >&2
 fi
 
+if command -v rustup-init >/dev/null 2>&1 && ! command -v rustup >/dev/null 2>&1; then
+  rustup-init -y --no-modify-path
+  source "${HOME}/.cargo/env"
+fi
 if command -v rustup >/dev/null 2>&1; then
   rustup toolchain install stable
   rustup component add rustfmt clippy
 else
-  echo "未安装 rustup，可执行 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh" >&2
+  echo "未安装 rustup，请先运行 make brew 安装 rustup-init" >&2
 fi
 
 cat <<EOF > "${CHEZMOI_DIR}/dot_tool-versions.tmpl"

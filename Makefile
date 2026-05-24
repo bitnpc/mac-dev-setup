@@ -1,11 +1,12 @@
 SHELL := /bin/zsh
 
-.PHONY: help bootstrap brew shell languages git containers apps validate ansible chezmoi clean
+.PHONY: help all bootstrap brew shell languages git containers apps validate ansible chezmoi clean
 
 help:
 	@echo "macOS 开发环境自动化"
 	@echo
 	@echo "可用目标："
+	@echo "  all        - 按顺序执行全部配置步骤"
 	@echo "  bootstrap  - 检查并安装 Xcode CLT 与 Homebrew"
 	@echo "  brew       - 使用 Brewfile 安装 CLI 与应用"
 	@echo "  shell      - 安装并配置 iTerm2、Oh My Zsh、插件与 Starship"
@@ -16,6 +17,10 @@ help:
 	@echo "  validate   - 自检核心工具链版本"
 	@echo "  ansible    - 运行 Ansible Playbook（需要 sudo）"
 	@echo "  chezmoi    - 使用 chezmoi 应用 dotfiles"
+	@echo "  clean      - 清理缓存文件"
+
+all: bootstrap brew shell languages git containers apps validate
+	@echo "==> 全部配置完成"
 
 bootstrap:
 	./scripts/bootstrap.sh
@@ -49,4 +54,3 @@ chezmoi:
 
 clean:
 	rm -rf .cache
-

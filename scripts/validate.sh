@@ -1,21 +1,40 @@
 #!/bin/zsh
 set -euo pipefail
 
-commands=(
-  "xcode-select --print-path"
-  "brew doctor"
-  "git --version"
-  "python3 --version"
-  "pyenv versions"
-  "node --version"
-  "volta list all"
-  "docker info"
-)
+pass=0
+fail=0
 
-for cmd in "${commands[@]}"; do
-  echo "==> ${cmd}"
-  if ! eval "${cmd}"; then
-    echo "命令执行失败：${cmd}" >&2
+check() {
+  local label="$1"
+  shift
+  echo -n "==> ${label}: "
+  if output=$(eval "$@" 2>&1); then
+    echo "✓ ${output}"
+    ((pass++))
+  else
+    echo "✗ 未通过"
+    ((fail++))
   fi
-done
+}
 
+check "Xcode CLT"      "xcode-select --print-path"
+check "Homebrew"        "brew --version | head -n1"
+check "Git"            "git --version"
+check "Python"         "python3 --version"
+check "pyenv"          "pyenv --version"
+check "Ruby"           "ruby --version"
+check "rbenv"          "rbenv --version"
+check "Node.js"        "node --version"
+check "Volta"          "volta --version"
+check "Go"             "go version"
+check "Rust (rustc)"   "rustc --version"
+check "Cargo"          "cargo --version"
+check "Docker"         "docker --version"
+check "Colima"         "colima status 2>/dev/null || colima version"
+check "Podman"         "podman --version"
+check "Starship"       "starship --version"
+check "chezmoi"        "chezmoi --version"
+
+echo ""
+echo "结果：${pass} 通过，${fail} 未通过"
+[ "${fail}" -eq 0 ]
