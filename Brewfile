@@ -2,7 +2,7 @@
 brew "git"
 brew "gh"
 brew "glab"
-brew "git-credential-manager"
+cask "fork"
 
 # 基础依赖
 brew "openssl@3"
@@ -18,8 +18,7 @@ brew "rustup-init"
 brew "volta"
 
 # 容器
-brew "colima"
-brew "podman"
+# podman-desktop 自带 podman CLI，无需单独安装
 
 # Shell 与终端
 brew "starship"
@@ -40,6 +39,9 @@ cask "podman-desktop"
 # 编辑器
 cask "visual-studio-code"
 cask "jetbrains-toolbox"
+
+# 浏览器
+cask "google-chrome"
 
 # 效率工具
 cask "raycast"
