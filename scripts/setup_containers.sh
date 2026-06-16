@@ -1,7 +1,12 @@
 #!/bin/zsh
 set -euo pipefail
 
-eval "$("$(brew --prefix)"/bin/brew shellenv)"
+# 确保 brew 在当前 shell 中可用
+if ! command -v brew >/dev/null 2>&1; then
+  for bp in /opt/homebrew /usr/local; do
+    [ -x "${bp}/bin/brew" ] && eval "$("${bp}/bin/brew" shellenv)" && break
+  done
+fi
 
 echo "==> 配置容器与虚拟化工具"
 

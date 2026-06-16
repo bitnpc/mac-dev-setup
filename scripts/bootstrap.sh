@@ -14,7 +14,14 @@ fi
 echo "==> 检查 Homebrew"
 if ! command -v brew >/dev/null 2>&1; then
   echo "未检测到 Homebrew，开始安装..."
-  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+  # 安装完成后立刻将 brew 加入当前 PATH
+  if [ -x /opt/homebrew/bin/brew ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [ -x /usr/local/bin/brew ]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
 fi
 
 BREW_PREFIX="$(brew --prefix)"

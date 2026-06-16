@@ -2,6 +2,13 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+
+# 确保 brew 在当前 shell 中可用
+if ! command -v brew >/dev/null 2>&1; then
+  for bp in /opt/homebrew /usr/local; do
+    [ -x "${bp}/bin/brew" ] && eval "$("${bp}/bin/brew" shellenv)" && break
+  done
+fi
 BREW_PREFIX="$(brew --prefix)"
 ZSHRC="${HOME}/.zshrc"
 
