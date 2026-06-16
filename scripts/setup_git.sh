@@ -70,9 +70,10 @@ git config --global user.name "${DEFAULT_NAME}"
 git config --global user.email "${DEFAULT_EMAIL}"
 
 # ============================================================
-# GitHub 专属身份（写入独立文件，按需由仓库引用）
+# GitHub 身份 — 通过 git hook 在 clone 时自动绑定
 # ============================================================
 if [ -n "${GITHUB_USER:-}" ]; then
+  # 1. 写入 GitHub 身份文件
   cat <<EOF > "${GITHUB_GITCONFIG}"
 [user]
   name = ${GITHUB_USER}
@@ -80,17 +81,49 @@ if [ -n "${GITHUB_USER:-}" ]; then
 EOF
   echo "==> 已写入 ${GITHUB_GITCONFIG}"
 
-  # 同时生成一个快捷脚本，方便给任意 GitHub 仓库绑定身份
-  cat <<EOF > "${HOME}/.local/bin/git-github"
-#!/bin/zsh
-# 将当前仓库的 Git 身份切换为 GitHub
-git config --local include.path "${GITHUB_GITCONFIG}"
-echo "==> 已为 \$(pwd) 绑定 GitHub 身份 (\$(git config user.name) / \$(git config user.email))"
-EOF
-  chmod +x "${HOME}/.local/bin/git-github"
-  echo "==> 已安装 git-github 快捷命令"
+  # 2. 设置 git init 模板目录
+  TEMPLATE_DIR="${HOME}/.git-template"
+  mkdir -p "${TEMPLATE_DIR}/hooks"
+  git config --global init.templateDir "${TEMPLATE_DIR}"
 
-  # 为当前仓库（如果 remote 指向 github.com）自动绑定
+  # 3. 写入 post-checkout hook：clone 时自动检测 remote 是否指向 github.com
+  cat <<'HOOK' > "${TEMPLATE_DIR}/hooks/post-checkout"
+#!/bin/zsh
+# 仅在 git clone 完成的首次 checkout 时触发
+# $1 = 上一个 HEAD ref（clone 时为 0000000...）
+# $3 = 1 表示这是分支 checkout（非文件 checkout）
+
+prev_head="$1"
+is_branch="$3"
+
+# 只在分支级 checkout 且是首次（clone）时执行
+if [ "${is_branch}" != "1" ]; then
+  exit 0
+fi
+if [ "${prev_head}" != "0000000000000000000000000000000000000000" ]; then
+  exit 0
+fi
+
+# 检测 remote origin 是否指向 github.com
+remote_url=$(git remote get-url origin 2>/dev/null || true)
+if [ -z "${remote_url}" ]; then
+  exit 0
+fi
+if ! echo "${remote_url}" | grep -q 'github\.com'; then
+  exit 0
+fi
+
+# 避免重复绑定
+if git config --local include.path 2>/dev/null | grep -q 'gitconfig-github'; then
+  exit 0
+fi
+
+git config --local include.path ~/.gitconfig-github
+HOOK
+  chmod +x "${TEMPLATE_DIR}/hooks/post-checkout"
+  echo "==> 已安装 git clone 自动身份检测 hook (init.templateDir = ${TEMPLATE_DIR})"
+
+  # 为当前仓库（如果 remote 指向 github.com）立即绑定
   if git remote get-url origin 2>/dev/null | grep -q 'github\.com'; then
     git config --local include.path "${GITHUB_GITCONFIG}"
     echo "==> 已为当前仓库自动绑定 GitHub 身份"
@@ -164,18 +197,13 @@ cat <<'EOF' > "${CHEZMOI_DIR}/dot_gitconfig.tmpl"
   email = {{ .git.email }}
 [init]
   defaultBranch = main
+  templateDir = ~/.git-template
 [core]
   autocrlf = input
 [pull]
   rebase = false
 [credential]
   helper = osxkeychain
-{{- if .git.githubUser }}
-
-# GitHub 仓库自动切换身份
-[includeIf "hasconfig:remote.*.url:git@{{ .git.githubHost | default "github.com" }}:**"]
-  path = ~/.gitconfig-github
-{{- end }}
 EOF
 
 cat <<'EOF' > "${CHEZMOI_DIR}/dot_gitconfig-github.tmpl"
@@ -214,9 +242,7 @@ if [ -n "${GITHUB_USER:-}" ]; then
   echo "   2. 将 ~/.ssh/${GITHUB_KEY_NAME}.pub 添加到 https://github.com/settings/keys"
   echo "   3. 测试: ssh -T git@${GITHUB_HOST}"
   echo ""
-  echo "🔀 GitHub 身份绑定："
-  echo "   克隆 GitHub 仓库后，进入目录执行: git-github"
-  echo "   或手动: git config --local include.path ~/.gitconfig-github"
+  echo "🔀 git clone 后会自动检测 github.com remote 并绑定 GitHub 身份"
 fi
 echo ""
 echo "💡 非交互模式（CI / 自动化）："
