@@ -9,9 +9,3 @@
   rebase = false
 [credential]
   helper = osxkeychain
-{{- if .git.githubUser }}
-
-# GitHub 仓库自动切换身份
-[includeIf "hasconfig:remote.*.url:git@{{ .git.githubHost | default "github.com" }}:**"]
-  path = ~/.gitconfig-github
-{{- end }}

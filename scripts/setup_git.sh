@@ -70,7 +70,7 @@ git config --global user.name "${DEFAULT_NAME}"
 git config --global user.email "${DEFAULT_EMAIL}"
 
 # ============================================================
-# GitHub 专属身份（includeIf 只对 github.com 生效）
+# GitHub 专属身份（写入独立文件，按需由仓库引用）
 # ============================================================
 if [ -n "${GITHUB_USER:-}" ]; then
   cat <<EOF > "${GITHUB_GITCONFIG}"
@@ -80,8 +80,21 @@ if [ -n "${GITHUB_USER:-}" ]; then
 EOF
   echo "==> 已写入 ${GITHUB_GITCONFIG}"
 
-  git config --global --unset-all "includeIf.hasconfig:remote.*.url:git@${GITHUB_HOST}:**.path" 2>/dev/null || true
-  git config --global --add "includeIf.hasconfig:remote.*.url:git@${GITHUB_HOST}:**.path" "${GITHUB_GITCONFIG}"
+  # 同时生成一个快捷脚本，方便给任意 GitHub 仓库绑定身份
+  cat <<EOF > "${HOME}/.local/bin/git-github"
+#!/bin/zsh
+# 将当前仓库的 Git 身份切换为 GitHub
+git config --local include.path "${GITHUB_GITCONFIG}"
+echo "==> 已为 \$(pwd) 绑定 GitHub 身份 (\$(git config user.name) / \$(git config user.email))"
+EOF
+  chmod +x "${HOME}/.local/bin/git-github"
+  echo "==> 已安装 git-github 快捷命令"
+
+  # 为当前仓库（如果 remote 指向 github.com）自动绑定
+  if git remote get-url origin 2>/dev/null | grep -q 'github\.com'; then
+    git config --local include.path "${GITHUB_GITCONFIG}"
+    echo "==> 已为当前仓库自动绑定 GitHub 身份"
+  fi
 fi
 
 # ============================================================
@@ -200,6 +213,10 @@ echo "   1. 将 ~/.ssh/${DEFAULT_KEY_NAME}.pub 添加到内网 Git 平台"
 if [ -n "${GITHUB_USER:-}" ]; then
   echo "   2. 将 ~/.ssh/${GITHUB_KEY_NAME}.pub 添加到 https://github.com/settings/keys"
   echo "   3. 测试: ssh -T git@${GITHUB_HOST}"
+  echo ""
+  echo "🔀 GitHub 身份绑定："
+  echo "   克隆 GitHub 仓库后，进入目录执行: git-github"
+  echo "   或手动: git config --local include.path ~/.gitconfig-github"
 fi
 echo ""
 echo "💡 非交互模式（CI / 自动化）："
