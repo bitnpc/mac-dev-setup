@@ -11,13 +11,18 @@ help:
 	@echo "  brew       - 使用 Brewfile 安装 CLI 与应用"
 	@echo "  shell      - 安装并配置 iTerm2、Oh My Zsh、插件与 Starship"
 	@echo "  languages  - 配置 Python、Ruby、Node.js、Go、Rust 等运行时"
-	@echo "  git        - 初始化 Git/SSH 及凭证工具"
+	@echo "  git        - 初始化 Git/SSH 及凭证工具（交互式，也可通过环境变量跳过）"
 	@echo "  containers - 安装 Docker、Colima/Podman 等容器工具"
 	@echo "  apps       - 安装常用 GUI 工具与字体"
 	@echo "  validate   - 自检核心工具链版本"
 	@echo "  ansible    - 运行 Ansible Playbook（需要 sudo）"
 	@echo "  chezmoi    - 使用 chezmoi 应用 dotfiles"
 	@echo "  clean      - 清理缓存文件"
+	@echo
+	@echo "非交互模式（CI / 自动化）："
+	@echo "  GIT_NAME=your-name GIT_EMAIL=you@corp.example.com \\"
+	@echo "  GIT_GITHUB_EMAIL=you@gmail.com GIT_GH_USER=your-gh \\"
+	@echo "  make git"
 
 all: bootstrap brew shell languages git containers apps validate
 	@echo "==> 全部配置完成"

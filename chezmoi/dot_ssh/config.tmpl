@@ -1,10 +1,11 @@
-Host github.com
-  HostName github.com
-  User git
-  IdentityFile ~/.ssh/id_ed25519_github
+Host *
+  AddKeysToAgent yes
+  UseKeychain yes
+  IdentityFile ~/.ssh/{{ .git.defaultKeyName | default "id_ed25519" }}
+{{- if .git.githubUser }}
 
-Host gitlab.internal
-  HostName gitlab.internal.company
+Host {{ .git.githubHost | default "github.com" }}
+  HostName {{ .git.githubHost | default "github.com" }}
   User git
-  IdentityFile ~/.ssh/id_ed25519_company
-
+  IdentityFile ~/.ssh/{{ .git.githubKeyName | default "id_ed25519_github" }}
+{{- end }}
